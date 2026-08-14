@@ -1,0 +1,6 @@
+{
+  "name": "WhereSG AI - Singapore Neighborhood & Property Intelligence",
+  "description": "AI-powered Singapore neighborhood recommendation engine and property intelligence platform analyzing affordability, commute times, school zones, amenities, and real-time housing data.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

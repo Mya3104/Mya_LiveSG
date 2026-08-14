@@ -97,12 +97,23 @@ export function parseNaturalLanguageQuery(query: string): Partial<UserPreference
 
 export function rankNeighborhoods(
   preferences: UserPreferences,
-  customList: Neighborhood[] = INITIAL_NEIGHBORHOODS
+  customList: Neighborhood[] = INITIAL_NEIGHBORHOODS,
+  hdbStatsMap?: Record<string, { median3Room?: number; median4Room?: number; median5Room?: number; avgPsf?: number }>
 ): Neighborhood[] {
   return customList
     .map((n) => {
       let totalScore = 0;
       let weightSum = 0;
+
+      // Copy or augment propertySnapshot with live HDB stats if available
+      const hdbLive = hdbStatsMap?.[n.id] || hdbStatsMap?.[n.name.toUpperCase()];
+      const effectiveHdb = {
+        ...n.propertySnapshot.hdb,
+        median3Room: hdbLive?.median3Room || n.propertySnapshot.hdb.median3Room,
+        median4Room: hdbLive?.median4Room || n.propertySnapshot.hdb.median4Room,
+        median5Room: hdbLive?.median5Room || n.propertySnapshot.hdb.median5Room,
+        avgPsf: hdbLive?.avgPsf || n.propertySnapshot.hdb.avgPsf,
+      };
 
       // 1. Commute Factor (Weight: 25)
       const primaryHub = preferences.primaryWorkplace || 'mbfc';
@@ -125,7 +136,13 @@ export function rankNeighborhoods(
       // 2. Affordability Factor (Weight: 25)
       let pricePoint = 1500000;
       if (preferences.propertyCategory === 'hdb') {
-        pricePoint = preferences.bedroomsMin >= 4 ? n.propertySnapshot.hdb.median5Room : n.propertySnapshot.hdb.median4Room;
+        if (preferences.bedroomsMin <= 2) {
+          pricePoint = effectiveHdb.median3Room;
+        } else if (preferences.bedroomsMin === 3) {
+          pricePoint = effectiveHdb.median4Room;
+        } else {
+          pricePoint = effectiveHdb.median5Room;
+        }
       } else if (preferences.propertyCategory === 'condo') {
         pricePoint = preferences.bedroomsMin >= 3 ? n.propertySnapshot.condo.median3Bed : n.propertySnapshot.condo.median2Bed;
       } else {
@@ -187,6 +204,14 @@ export function rankNeighborhoods(
 
       return {
         ...n,
+        propertySnapshot: {
+          ...n.propertySnapshot,
+          hdb: effectiveHdb,
+        },
+        scores: {
+          ...n.scores,
+          affordability: affordScore,
+        },
         matchScore: finalMatchScore,
         matchTier,
       };

@@ -1,6 +1,9 @@
 import React from 'react';
 import { Navbar } from './components/Navbar';
 import { HeroSearch } from './components/HeroSearch';
+import { GuidedQuestionnaire } from './components/GuidedQuestionnaire';
+import { LoadingScreen } from './components/LoadingScreen';
+import { TopRecommendationHero } from './components/TopRecommendationHero';
 import { ResultsSidebar } from './components/ResultsSidebar';
 import { NeighborhoodDetail } from './components/NeighborhoodDetail';
 import { PreferencesModal } from './components/PreferencesModal';
@@ -8,10 +11,12 @@ import { ComparisonModal } from './components/ComparisonModal';
 import { ExportReportModal } from './components/ExportReportModal';
 import { SavedModal } from './components/SavedModal';
 import { DataSourcesModal } from './components/DataSourcesModal';
+import { OneMapExplorerModal } from './components/OneMapExplorerModal';
 import { INITIAL_NEIGHBORHOODS, WORKPLACE_HUBS } from './data/singaporeData';
+
 import { rankNeighborhoods, parseNaturalLanguageQuery } from './utils/recommendationEngine';
 import { Neighborhood, UserPreferences } from './types';
-import { Search, Sparkles, SlidersHorizontal, ArrowLeft, TrendingUp, Info } from 'lucide-react';
+import { Search, Sparkles, SlidersHorizontal, ArrowLeft, TrendingUp, Info, Scale, BookmarkCheck, RotateCcw } from 'lucide-react';
 
 const DEFAULT_PREFERENCES: UserPreferences = {
   familySize: 'family_with_kids',
@@ -33,7 +38,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 };
 
 export function App() {
-  const [currentView, setCurrentView] = React.useState<'search' | 'results'>('search');
+  const [currentView, setCurrentView] = React.useState<'search' | 'questionnaire' | 'results'>('search');
   const [preferences, setPreferences] = React.useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [neighborhoods, setNeighborhoods] = React.useState<Neighborhood[]>(() =>
     rankNeighborhoods(DEFAULT_PREFERENCES, INITIAL_NEIGHBORHOODS)
@@ -68,7 +73,9 @@ export function App() {
   const [isSavedOpen, setIsSavedOpen] = React.useState<boolean>(false);
   const [isExportReportOpen, setIsExportReportOpen] = React.useState<boolean>(false);
   const [isDataSourcesOpen, setIsDataSourcesOpen] = React.useState<boolean>(false);
+  const [isOneMapOpen, setIsOneMapOpen] = React.useState<boolean>(false);
   const [isAboutOpen, setIsAboutOpen] = React.useState<boolean>(false);
+
 
   // Sync to local storage
   React.useEffect(() => {
@@ -186,43 +193,65 @@ export function App() {
   const savedNeighborhoods = INITIAL_NEIGHBORHOODS.filter((n) => savedIds.includes(n.id));
   const compareNeighborhoods = INITIAL_NEIGHBORHOODS.filter((n) => compareIds.includes(n.id));
 
+  // Top overall recommendation (#1 match)
+  const topMatch = sortedNeighborhoods[0] || neighborhoods[0];
+
   return (
-    <div className="min-h-screen bg-[#F1F5F9] text-slate-900 flex flex-col font-sans antialiased selection:bg-indigo-100 selection:text-indigo-900">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans antialiased selection:bg-indigo-100 selection:text-indigo-900">
       {/* Global Navigation Bar */}
       <Navbar
         currentView={currentView}
         savedCount={savedIds.length}
         compareCount={compareIds.length}
-        onNavigateSearch={() => setCurrentView('search')}
+        onNavigateHome={() => setCurrentView('search')}
+        onStartQuiz={() => setCurrentView('questionnaire')}
+        onExploreAreas={() => setCurrentView('results')}
         onOpenSaved={() => setIsSavedOpen(true)}
         onOpenCompare={() => setIsCompareOpen(true)}
         onOpenDataSources={() => setIsDataSourcesOpen(true)}
+        onOpenOneMap={() => setIsOneMapOpen(true)}
         onOpenAbout={() => setIsAboutOpen(true)}
       />
 
+
       {/* Main App Content Router */}
       <main className="flex-1">
-        {currentView === 'search' ? (
+        {isLoading ? (
+          <LoadingScreen querySummary={quickQueryInput} />
+        ) : currentView === 'search' ? (
           <HeroSearch
             onSearch={executeSearch}
+            onStartQuestionnaire={() => setCurrentView('questionnaire')}
+            onExploreAll={() => setCurrentView('results')}
             onOpenPreferences={() => setIsPreferencesOpen(true)}
             isLoading={isLoading}
+          />
+        ) : currentView === 'questionnaire' ? (
+          <GuidedQuestionnaire
+            initialPreferences={preferences}
+            onComplete={(updatedPrefs) => {
+              executeSearch(
+                `${updatedPrefs.familySize} looking for ${updatedPrefs.propertyCategory} under $${updatedPrefs.budgetMax?.toLocaleString()} near ${updatedPrefs.primaryWorkplace}`,
+                updatedPrefs
+              );
+            }}
+            onCancel={() => setCurrentView('search')}
           />
         ) : (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
             {/* Top Results Control Bar */}
-            <div className="p-3 bg-white rounded border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <button
                   id="back-to-landing-btn"
                   onClick={() => setCurrentView('search')}
-                  className="px-3 py-1.5 hover:bg-slate-100 rounded text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider"
+                  className="px-3 py-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1.5 text-xs font-semibold"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Back</span>
+                  <span>Home</span>
                 </button>
 
-                <div className="relative flex-1 md:w-96">
+                <div className="relative flex-1 md:w-80">
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
@@ -234,8 +263,8 @@ export function App() {
                       type="text"
                       value={quickQueryInput}
                       onChange={(e) => setQuickQueryInput(e.target.value)}
-                      placeholder="Refine search query (e.g. Under 1.5M near MRT)..."
-                      className="w-full text-xs py-1.5 pl-8 pr-3 bg-slate-50 border border-slate-200 rounded focus:bg-white focus:border-indigo-600 focus:outline-none font-mono"
+                      placeholder="Refine search criteria..."
+                      className="w-full text-xs py-2 pl-8 pr-3 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:border-indigo-600 focus:outline-none"
                     />
                     <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5" />
                   </form>
@@ -243,26 +272,54 @@ export function App() {
               </div>
 
               <div className="flex items-center justify-end gap-2 text-xs">
+                {/* Adjust Preferences Button */}
                 <button
                   id="refine-criteria-btn"
-                  onClick={() => setIsPreferencesOpen(true)}
-                  className="px-3.5 py-1.5 rounded border border-slate-200 bg-white hover:bg-slate-50 font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 transition-colors"
+                  onClick={() => setCurrentView('questionnaire')}
+                  className="px-3.5 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 font-semibold text-slate-700 flex items-center gap-1.5 transition-colors shadow-2xs"
                 >
                   <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-600" />
-                  <span>Customise Criteria</span>
+                  <span>Adjust Preferences</span>
                 </button>
 
                 <button
                   id="open-compare-bar-btn"
                   onClick={() => setIsCompareOpen(true)}
-                  className="px-3.5 py-1.5 rounded bg-indigo-600 text-white font-bold uppercase tracking-wider flex items-center gap-1.5 hover:bg-indigo-700 transition-colors shadow-sm"
+                  className="px-3.5 py-2 rounded-lg bg-indigo-600 text-white font-semibold flex items-center gap-1.5 hover:bg-indigo-700 transition-colors shadow-xs"
                 >
+                  <Scale className="w-3.5 h-3.5" />
                   <span>Compare ({compareIds.length})</span>
                 </button>
               </div>
             </div>
 
-            {/* Results Grid (Sidebar + Main Estate Detail) */}
+            {/* Top #1 Standout Hero Recommendation Card */}
+            {topMatch && (
+              <TopRecommendationHero
+                neighborhood={topMatch}
+                preferences={preferences}
+                isSaved={savedIds.includes(topMatch.id)}
+                isCompared={compareIds.includes(topMatch.id)}
+                onToggleSave={() => handleToggleSave(topMatch.id)}
+                onToggleCompare={() => handleToggleCompare(topMatch.id)}
+                onViewDetails={() => setSelectedNeighborhood(topMatch)}
+                onAdjustPreferences={() => setCurrentView('questionnaire')}
+              />
+            )}
+
+            {/* Header for All Ranked Results */}
+            <div className="flex items-center justify-between pt-2">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Your Best Matches
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Ranked by multi-attribute score matching your commute, budget, schools, and lifestyle priorities.
+                </p>
+              </div>
+            </div>
+
+            {/* Results Grid (Sidebar List + Main Estate Detail Pane) */}
             <div className="flex flex-col lg:flex-row items-start gap-6">
               {/* Left Sidebar List */}
               <ResultsSidebar
@@ -275,6 +332,7 @@ export function App() {
                 onToggleCompare={handleToggleCompare}
                 sortBy={sortBy}
                 onSortChange={(s) => setSortBy(s)}
+                preferences={preferences}
               />
 
               {/* Right Detail Pane */}
@@ -297,27 +355,27 @@ export function App() {
       </main>
 
       {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">
+      <footer className="mt-auto border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="flex items-center gap-2">
-            <span className="font-bold text-slate-900 uppercase tracking-wider">WhereSG AI</span>
+            <span className="font-bold text-slate-900">WhereSG AI</span>
             <span>• Singapore Housing & Relocation Intelligence System</span>
           </p>
 
-          <div className="flex items-center gap-4 text-[11px] font-mono">
+          <div className="flex items-center gap-4 text-[11px]">
             <button
               onClick={() => setIsDataSourcesOpen(true)}
-              className="hover:text-indigo-600 transition-colors uppercase font-bold tracking-wider"
+              className="hover:text-indigo-600 transition-colors font-medium"
             >
-              Data Methodology
+              Data Methodology & Sources
             </button>
             <button
               onClick={() => setIsAboutOpen(true)}
-              className="hover:text-indigo-600 transition-colors uppercase font-bold tracking-wider"
+              className="hover:text-indigo-600 transition-colors font-medium"
             >
               About
             </button>
-            <span className="text-slate-400">MAS SORA 3.12% | NEA PSI 38</span>
+            <span className="text-slate-400 font-mono">MAS SORA 3.12% | NEA PSI 38</span>
           </div>
         </div>
       </footer>
@@ -361,12 +419,18 @@ export function App() {
         onClose={() => setIsDataSourcesOpen(false)}
       />
 
+      <OneMapExplorerModal
+        isOpen={isOneMapOpen}
+        onClose={() => setIsOneMapOpen(false)}
+      />
+
+
       {/* About Modal */}
       {isAboutOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6">
-          <div className="bg-white rounded max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-slate-900">About WhereSG AI</h2>
+              <h2 className="text-base font-bold text-slate-900">About WhereSG AI</h2>
               <button
                 onClick={() => setIsAboutOpen(false)}
                 className="text-slate-400 hover:text-slate-600"
@@ -375,12 +439,12 @@ export function App() {
               </button>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              WhereSG AI is an intelligent housing search engine engineered to help individuals, young couples, and families identify their optimal living estates across Singapore. By fusing real-time transit times (LTA DataMall), MOE school priority zones, URA price caveats, and MAS interest benchmarks, WhereSG AI eliminates hours of fragmented research.
+              WhereSG AI is a friendly, intelligent Singapore neighbourhood advisor designed to help individuals, couples, and families identify the best places for them to live in Singapore. By combining real-time transit data (LTA DataMall), MOE primary school priority zones, URA price caveats, and MAS interest benchmarks, WhereSG AI eliminates hours of stressful, fragmented research.
             </p>
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setIsAboutOpen(false)}
-                className="px-4 py-2 bg-slate-900 text-white rounded text-xs font-bold uppercase tracking-wider hover:bg-slate-800"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors"
               >
                 Close
               </button>

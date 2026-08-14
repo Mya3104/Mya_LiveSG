@@ -1,244 +1,254 @@
 import React from 'react';
-import { Search, Sparkles, Shield, Users, Building, TreePine, HeartHandshake, Database, SlidersHorizontal, CheckCircle2, ChevronRight, ArrowRight } from 'lucide-react';
+import {
+  Search,
+  Sparkles,
+  ShieldCheck,
+  Users,
+  Building,
+  TreePine,
+  SlidersHorizontal,
+  CheckCircle2,
+  ChevronRight,
+  ArrowRight,
+  Compass,
+  Train,
+  Clock,
+  GraduationCap,
+  DollarSign,
+  HeartHandshake,
+} from 'lucide-react';
 import { SingaporeSkylineIllustration } from './SingaporeSkylineIllustration';
-import { UserPreferences } from '../types';
 
 interface HeroSearchProps {
   onSearch: (queryText: string) => void;
+  onStartQuestionnaire: () => void;
+  onExploreAll: () => void;
   onOpenPreferences: () => void;
   isLoading: boolean;
 }
 
 const EXAMPLE_PROMPTS = [
   {
-    icon: Shield,
-    title: 'Young couple, close to CBD, condo under $1.5m',
-    query: 'Young working couple looking for a 2-bedroom condo under $1.5m close to CBD or one-north, with good cafes and gyms.',
-  },
-  {
     icon: Users,
-    title: 'Family with kids, near good schools and MRT',
+    title: 'Family with kids near top schools',
+    desc: '3-Bed condo under $1.8M, near MBFC & Changi, <1km to good primary school',
     query: 'Family of four looking for a 3-bedroom condo under $1.8m. I work at MBFC, my wife works at Changi. We want to be near MRT, within 1km of a primary school and near parks.',
   },
   {
+    icon: Compass,
+    title: 'Young couple close to CBD',
+    desc: '2-Bed condo under $1.5M, short commute, lively cafes & gyms',
+    query: 'Young working couple looking for a 2-bedroom condo under $1.5m close to CBD or one-north, with good cafes and gyms.',
+  },
+  {
     icon: Building,
-    title: 'Budget rental under $3k, near business parks',
+    title: 'Budget rental near business hubs',
+    desc: 'Rental under $3.5k/mo near Changi Business Park or Punggol',
     query: 'Single expat professional looking for an HDB or compact condo rental under $3,200/month near Changi Business Park or Punggol Digital District.',
   },
   {
     icon: TreePine,
-    title: 'Retiree, quiet area, near parks and healthcare',
+    title: 'Quiet, leafy haven for retirees',
+    desc: 'Near nature parks, hawker centres, and polyclinic',
     query: 'Retiree couple looking for a quiet, leafy mature estate near a polyclinic/hospital, parks, and hawker food under $700k resale.',
   },
 ];
 
 export const HeroSearch: React.FC<HeroSearchProps> = ({
   onSearch,
+  onStartQuestionnaire,
+  onExploreAll,
   onOpenPreferences,
   isLoading,
 }) => {
   const [inputText, setInputText] = React.useState('');
+  const [showDirectSearch, setShowDirectSearch] = React.useState(false);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inputText.trim()) {
       onSearch(inputText.trim());
     } else {
-      // Default to example family search if empty
-      onSearch('Family of four looking for a 3-bedroom condo under $1.8m. I work at MBFC, my wife works at Changi. We want to be near MRT, within 1km of a primary school and near parks.');
+      onStartQuestionnaire();
     }
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-16">
-      {/* Top Hero Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        <div className="lg:col-span-7 space-y-4 text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-sm bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Singapore Housing & Relocation Intelligence</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-light text-slate-900 tracking-tight leading-[1.1]">
-            Where should <br className="hidden sm:block" />
-            you live in <span className="font-extrabold text-indigo-600">Singapore</span>?
-          </h1>
-
-          <p className="text-base sm:text-lg text-slate-600 max-w-xl leading-relaxed">
-            Data-driven relocation algorithms leveraging official government datasets (URA, LTA DataMall, MOE, SingStat, MAS) to match your household with optimal planning areas.
-          </p>
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16 space-y-16">
+      {/* 1. Landing Hero Section */}
+      <div className="text-center space-y-6 max-w-3xl mx-auto">
+        {/* Trust/Value Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold shadow-xs">
+          <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+          <span>Personalised recommendations • Singapore-wide • Takes about 2 minutes</span>
         </div>
 
-        <div className="lg:col-span-5 flex justify-center lg:justify-end">
-          <div className="w-full max-w-md p-4 rounded border border-slate-200 bg-white shadow-sm">
-            <SingaporeSkylineIllustration />
+        {/* Primary Message */}
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
+          Find the best place to live in Singapore for <span className="text-indigo-600">YOU</span>.
+        </h1>
+
+        {/* Supporting Message */}
+        <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
+          Tell us what matters most — budget, commute, lifestyle, schools, amenities, and more — and we’ll recommend the areas that fit you best.
+        </p>
+
+        {/* Primary and Secondary Action Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+          <button
+            id="hero-start-quiz-btn"
+            onClick={onStartQuestionnaire}
+            className="w-full sm:w-auto px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm sm:text-base shadow-lg shadow-indigo-600/20 hover:shadow-indigo-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2.5"
+          >
+            <span>Find my best area</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+
+          <button
+            id="hero-explore-areas-btn"
+            onClick={onExploreAll}
+            className="w-full sm:w-auto px-6 py-4 rounded-xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-semibold text-sm sm:text-base border border-slate-200 shadow-sm transition-all flex items-center justify-center gap-2"
+          >
+            <span>Explore all areas on map</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Skyline & How it Works Illustration Banner */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          <div className="md:col-span-7 space-y-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+              Your Personal Singapore Neighbourhood Advisor
+            </h2>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              WhereSG AI models every Singapore planning area with authoritative government data. Whether you need a short MRT commute to Marina Bay, access to Top-Tier MOE primary schools, or a leafy peaceful haven on a budget, we find the exact estates that match your criteria.
+            </p>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>URA Real Transaction Caveats</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>LTA Door-to-Door Transit Times</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>MOE &lt;1km School Balloting Zones</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                <span>MAS SORA Mortgage Estimates</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="md:col-span-5">
+            <div className="p-4 rounded-xl border border-slate-100 bg-slate-50 shadow-xs">
+              <SingaporeSkylineIllustration />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main AI Search Box */}
-      <div className="bg-white rounded border border-slate-200 shadow-sm p-5 sm:p-7 space-y-5">
+      {/* Quick Search Option or Example Profiles */}
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <label htmlFor="ai-search-input" className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2">
-            <span>Natural Language Search Prompt</span>
-            <span className="text-[10px] font-normal text-slate-400 lowercase">(English or Singlish criteria)</span>
-          </label>
-          
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500">
+              Select an Example Profile or Type a Custom Search
+            </h3>
+          </div>
           <button
-            id="filter-criteria-trigger"
             type="button"
-            onClick={onOpenPreferences}
-            className="text-xs font-bold uppercase tracking-wider text-slate-700 hover:text-indigo-600 flex items-center gap-1.5 px-3 py-1.5 rounded border border-slate-200 hover:bg-slate-50 transition-colors"
+            onClick={() => setShowDirectSearch(!showDirectSearch)}
+            className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
           >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            <span>Advanced Filters</span>
+            <Search className="w-3.5 h-3.5" />
+            <span>{showDirectSearch ? 'Hide text search' : 'Type custom prompt'}</span>
           </button>
         </div>
 
-        <form onSubmit={handleFormSubmit} className="space-y-4">
-          <div className="relative">
-            <textarea
-              id="ai-search-input"
-              rows={3}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Example: We are a family of four looking for a 3-bedroom condo under $1.8m. I work at MBFC and my wife works at Changi. We want to be near MRT, within 1km of a primary school and near parks."
-              className="w-full px-4 py-3.5 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 bg-slate-50 border border-slate-200 rounded focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 focus:bg-white focus:outline-none transition-all resize-none font-sans"
-            />
-            <div className="absolute right-3.5 bottom-3.5 text-slate-400">
-              <Sparkles className="w-4 h-4 text-indigo-500" />
+        {/* Optional Custom Search Box */}
+        {showDirectSearch && (
+          <form onSubmit={handleFormSubmit} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm space-y-3">
+            <div className="relative">
+              <textarea
+                rows={2}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Example: We are a family of four looking for a 3-bedroom condo under $1.8m near MBFC and within 1km of a good school."
+                className="w-full p-3 text-sm text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-600 focus:bg-white resize-none"
+              />
             </div>
-          </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-colors"
+              >
+                <Search className="w-4 h-4" />
+                <span>Search With Prompt</span>
+              </button>
+            </div>
+          </form>
+        )}
 
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-            <p className="text-xs text-slate-500 flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Cross-referencing URA caveats, LTA transit times & MOE school zones</span>
-            </p>
-
-            <button
-              id="submit-ai-search-btn"
-              type="submit"
-              disabled={isLoading}
-              className="w-full sm:w-auto px-6 py-3 rounded bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <Search className="w-4 h-4" />
-                  <span>Execute Analysis</span>
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-
-        {/* Example prompts */}
-        <div className="pt-3 border-t border-slate-100">
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Example Household Profiles:</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {EXAMPLE_PROMPTS.map((item, idx) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={idx}
-                  id={`example-prompt-${idx}`}
-                  onClick={() => {
-                    setInputText(item.query);
-                    onSearch(item.query);
-                  }}
-                  className="p-3.5 rounded border border-slate-200 hover:border-indigo-600 hover:bg-indigo-50/20 text-left transition-all group flex items-start gap-2.5 bg-white"
-                >
-                  <div className="w-7 h-7 rounded-sm bg-slate-100 group-hover:bg-indigo-50 flex-shrink-0 flex items-center justify-center text-slate-600 group-hover:text-indigo-600 border border-slate-200">
-                    <Icon className="w-3.5 h-3.5" />
+        {/* Example Household Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {EXAMPLE_PROMPTS.map((item, idx) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={idx}
+                id={`example-prompt-card-${idx}`}
+                onClick={() => onSearch(item.query)}
+                className="p-5 rounded-xl border border-slate-200 hover:border-indigo-600 hover:shadow-md bg-white text-left transition-all group flex flex-col justify-between"
+              >
+                <div className="space-y-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 group-hover:bg-indigo-600 text-indigo-600 group-hover:text-white flex items-center justify-center transition-colors">
+                    <Icon className="w-4 h-4" />
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-slate-800 line-clamp-2 leading-snug group-hover:text-indigo-600 transition-colors">
-                      {item.title}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+                  <h4 className="font-bold text-sm text-slate-900 group-hover:text-indigo-600 transition-colors">
+                    {item.title}
+                  </h4>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
+
+                <div className="pt-4 mt-2 flex items-center gap-1 text-xs font-bold text-indigo-600 group-hover:translate-x-0.5 transition-transform">
+                  <span>See matches</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Why Use WhereSG AI Section - Geometric Grid */}
-      <div className="space-y-6 text-center">
-        <h2 className="text-xl sm:text-2xl font-light text-slate-900 tracking-tight">
-          System <span className="font-bold">Capabilities</span> & Methodology
-        </h2>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
-          <div className="p-5 rounded bg-white border border-slate-200 hover:border-indigo-600 transition-all space-y-3">
-            <div className="w-8 h-8 rounded-sm bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs border border-indigo-100">
-              01
-            </div>
-            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-tight">Official Gov.sg Data</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Powered by authoritative APIs: URA caveats, LTA DataMall transit matrices, SingStat, and MAS SORA benchmarks.
-            </p>
-          </div>
-
-          <div className="p-5 rounded bg-white border border-slate-200 hover:border-indigo-600 transition-all space-y-3">
-            <div className="w-8 h-8 rounded-sm bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs border border-indigo-100">
-              02
-            </div>
-            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-tight">Commute Optimization</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Multi-point commute solver balancing split workplaces between CBD, Changi, one-north, and Jurong.
-            </p>
-          </div>
-
-          <div className="p-5 rounded bg-white border border-slate-200 hover:border-indigo-600 transition-all space-y-3">
-            <div className="w-8 h-8 rounded-sm bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs border border-indigo-100">
-              03
-            </div>
-            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-tight">School Balloting Zones</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Granular &lt;1km and 1-2km MOE Primary 1 registration distance zone checks and Phase 2C risk assessments.
-            </p>
-          </div>
-
-          <div className="p-5 rounded bg-white border border-slate-200 hover:border-indigo-600 transition-all space-y-3">
-            <div className="w-8 h-8 rounded-sm bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs border border-indigo-100">
-              04
-            </div>
-            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-tight">Dossier & Comparison</h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Side-by-side estate benchmarking across 15+ metrics with printable housing intelligence dossier exports.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Trusted Data Sources Banner */}
-      <div className="pt-8 border-t border-slate-200 text-center space-y-4">
+      {/* Official Data Source Badges */}
+      <div className="pt-6 border-t border-slate-200 text-center space-y-3">
         <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-          Integrated Singapore Data Infrastructure
+          Powered by Authoritative Singapore Public Data
         </p>
-
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-slate-600 font-semibold text-xs">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded border border-slate-200 bg-white">
-            <span className="font-mono font-bold text-slate-900">data.gov.sg</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded border border-slate-200 bg-white">
-            <span className="font-bold text-slate-900">SingStat</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded border border-slate-200 bg-white">
-            <span className="font-bold text-slate-900">LTA DataMall</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded border border-slate-200 bg-white">
-            <span className="font-bold text-slate-900">OneMap SG</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded border border-slate-200 bg-white">
-            <span className="font-bold text-slate-900">MAS (SORA)</span>
-          </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded border border-slate-200 bg-white">
-            <span className="font-bold text-slate-900">URA Space</span>
-          </div>
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs font-semibold text-slate-600">
+          <span className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-xs">
+            URA (Urban Redevelopment Authority)
+          </span>
+          <span className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-xs">
+            LTA DataMall (Land Transport)
+          </span>
+          <span className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-xs">
+            MOE (Ministry of Education P1)
+          </span>
+          <span className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-xs">
+            MAS (Monetary Authority of Singapore SORA)
+          </span>
+          <span className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-xs">
+            SingStat & OneMap SG
+          </span>
         </div>
       </div>
     </div>

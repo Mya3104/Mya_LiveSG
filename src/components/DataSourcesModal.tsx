@@ -40,40 +40,71 @@ export const DataSourcesModal: React.FC<DataSourcesModalProps> = ({ isOpen, onCl
               WhereSG AI models every Singapore planning area and subzone using authoritative datasets published by Singapore government agencies:
             </p>
             <div className="space-y-2">
+              <div className="p-3.5 bg-emerald-50/70 rounded border border-emerald-200">
+                <div className="flex items-center justify-between">
+                  <p className="font-bold text-xs uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span>1. data.gov.sg (Official HDB Resale Transactions)</span>
+                  </p>
+                  <span className="text-[10px] font-mono font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                    Resource ID: d_8b84c4ee58e3cfc0ece0d773c8ca6abc
+                  </span>
+                </div>
+                <p className="text-slate-700 text-xs mt-1 leading-relaxed">
+                  Dataset: <strong>"Resale flat prices based on registration date from Jan-2017 onwards"</strong>. Live transaction queries, flat model breakdowns, floor area sqm, remaining lease computations, and median price benchmarks directly from the government open data portal.
+                </p>
+              </div>
+
               <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                <p className="font-bold text-xs uppercase tracking-wider text-slate-900">1. URA (Urban Redevelopment Authority)</p>
+                <p className="font-bold text-xs uppercase tracking-wider text-slate-900">2. URA (Urban Redevelopment Authority)</p>
                 <p className="text-slate-600 text-xs mt-0.5">
                   Private non-landed and landed residential transaction caveats, master plan zoning, density guidelines, and uncompleted pipeline supply.
                 </p>
               </div>
 
               <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                <p className="font-bold text-xs uppercase tracking-wider text-slate-900">2. LTA DataMall (Land Transport Authority)</p>
+                <p className="font-bold text-xs uppercase tracking-wider text-slate-900">3. LTA DataMall (Land Transport Authority)</p>
                 <p className="text-slate-600 text-xs mt-0.5">
                   Real-time transit network coordinates, train frequency matrices, peak-hour commute models, and Thomson-East Coast / Cross Island Line rollout schedules.
                 </p>
               </div>
 
+              <div className="p-3.5 bg-indigo-50/60 rounded border border-indigo-200">
+                <div className="flex items-center justify-between">
+                  <p className="font-bold text-xs uppercase tracking-wider text-indigo-950 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                    <span>4. SLA OneMap Singapore APIs (Routing & Geocoding)</span>
+                  </p>
+                  <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-100 px-1.5 py-0.5 rounded">
+                    SLA v2.0 REST
+                  </span>
+                </div>
+                <p className="text-slate-700 text-xs mt-1 leading-relaxed">
+                  Direct backend integration with OneMap Singapore: 3-day token minting (<code>/api/auth/post/getToken</code>), authenticated Elastic search/geocoding (<code>/api/common/elastic/search</code>), reverse geocoding (<code>/api/public/revgeocode</code>), and multi-modal routing (<code>/api/public/routingsvc/route</code> for walk, drive, cycle, pt).
+                </p>
+              </div>
+
               <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                <p className="font-bold text-xs uppercase tracking-wider text-slate-900">3. MOE (Ministry of Education) & OneMap</p>
+                <p className="font-bold text-xs uppercase tracking-wider text-slate-900">5. MOE (Ministry of Education)</p>
                 <p className="text-slate-600 text-xs mt-0.5">
                   Official Primary 1 registration home-school distance calculations (&lt;1km and 1-2km buffer zones) and historical Phase 2C balloting competition ratios.
                 </p>
               </div>
 
               <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                <p className="font-bold text-xs uppercase tracking-wider text-slate-900">4. MAS (Monetary Authority of Singapore)</p>
+                <p className="font-bold text-xs uppercase tracking-wider text-slate-900">6. MAS (Monetary Authority of Singapore)</p>
                 <p className="text-slate-600 text-xs mt-0.5">
                   Daily benchmark compounded Singapore Overnight Rate Average (SORA) for accurate mortgage affordability simulations.
                 </p>
               </div>
 
               <div className="p-3 bg-slate-50 rounded border border-slate-200">
-                <p className="font-bold text-xs uppercase tracking-wider text-slate-900">5. SingStat & SPF (Singapore Police Force)</p>
+                <p className="font-bold text-xs uppercase tracking-wider text-slate-900">7. SingStat & SPF (Singapore Police Force)</p>
                 <p className="text-slate-600 text-xs mt-0.5">
                   Subzone demographic breakdown, median household income distribution, and neighbourhood safety ratings.
                 </p>
               </div>
+
             </div>
           </div>
 

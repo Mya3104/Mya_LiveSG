@@ -8,6 +8,7 @@ import {
 import { Neighborhood, UserPreferences } from '../types';
 import { InteractiveMap } from './InteractiveMap';
 import { WORKPLACE_HUBS } from '../data/singaporeData';
+import { HDBMarketAnalytics } from './HDBMarketAnalytics';
 
 interface NeighborhoodDetailProps {
   neighborhood: Neighborhood;
@@ -515,76 +516,60 @@ export const NeighborhoodDetail: React.FC<NeighborhoodDetailProps> = ({
         {/* 5. MARKET & PRICE DATA TAB */}
         {activeTab === 'market' && (
           <div className="space-y-6">
-            {/* Price Benchmarks Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded bg-white border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">HDB Resale Benchmarks</span>
-                  <span className="text-xs font-mono font-bold text-emerald-600">+{neighborhood.propertySnapshot.hdb.yearlyAppreciation}% YoY</span>
-                </div>
-                <div className="space-y-2 text-xs font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-sans">3-Room HDB:</span>
-                    <span className="font-bold text-slate-900">${(neighborhood.propertySnapshot.hdb.median3Room / 1000).toFixed(0)}k</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-sans">4-Room HDB:</span>
-                    <span className="font-bold text-slate-900">${(neighborhood.propertySnapshot.hdb.median4Room / 1000).toFixed(0)}k</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-sans">5-Room HDB:</span>
-                    <span className="font-bold text-slate-900">${(neighborhood.propertySnapshot.hdb.median5Room / 1000).toFixed(0)}k</span>
-                  </div>
-                  <div className="flex justify-between pt-1 border-t border-slate-100">
-                    <span className="text-slate-500 font-sans">Avg HDB PSF:</span>
-                    <span className="font-bold text-slate-900">${neighborhood.propertySnapshot.hdb.avgPsf} psf</span>
-                  </div>
-                </div>
-              </div>
+            {/* Live HDB Resale Data & Transaction Explorer */}
+            <HDBMarketAnalytics neighborhood={neighborhood} preferences={preferences} />
 
-              <div className="p-4 rounded bg-white border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Private Condominium</span>
-                  <span className="text-xs font-mono font-bold text-emerald-600">+{neighborhood.propertySnapshot.condo.yearlyAppreciation}% YoY</span>
+            <div className="border-t border-slate-200 pt-6 space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                Private Residential & Rental Yields
+              </h3>
+              
+              {/* Private Property & Rental Benchmarks Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded bg-white border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Private Condominium</span>
+                    <span className="text-xs font-mono font-bold text-emerald-600">+{neighborhood.propertySnapshot.condo.yearlyAppreciation}% YoY</span>
+                  </div>
+                  <div className="space-y-2 text-xs font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-sans">2-Bedroom:</span>
+                      <span className="font-bold text-slate-900">${(neighborhood.propertySnapshot.condo.median2Bed / 1000000).toFixed(2)}M</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-sans">3-Bedroom:</span>
+                      <span className="font-bold text-slate-900">${(neighborhood.propertySnapshot.condo.median3Bed / 1000000).toFixed(2)}M</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-sans">4-Bedroom:</span>
+                      <span className="font-bold text-slate-900">${(neighborhood.propertySnapshot.condo.median4Bed / 1000000).toFixed(2)}M</span>
+                    </div>
+                    <div className="flex justify-between pt-1 border-t border-slate-100">
+                      <span className="text-slate-500 font-sans">Avg Condo PSF:</span>
+                      <span className="font-bold text-slate-900">${neighborhood.propertySnapshot.condo.avgPsf} psf</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2 text-xs font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-sans">2-Bedroom:</span>
-                    <span className="font-bold text-slate-900">${(neighborhood.propertySnapshot.condo.median2Bed / 1000000).toFixed(2)}M</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-sans">3-Bedroom:</span>
-                    <span className="font-bold text-slate-900">${(neighborhood.propertySnapshot.condo.median3Bed / 1000000).toFixed(2)}M</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-sans">4-Bedroom:</span>
-                    <span className="font-bold text-slate-900">${(neighborhood.propertySnapshot.condo.median4Bed / 1000000).toFixed(2)}M</span>
-                  </div>
-                  <div className="flex justify-between pt-1 border-t border-slate-100">
-                    <span className="text-slate-500 font-sans">Avg Condo PSF:</span>
-                    <span className="font-bold text-slate-900">${neighborhood.propertySnapshot.condo.avgPsf} psf</span>
-                  </div>
-                </div>
-              </div>
 
-              <div className="p-4 rounded bg-white border border-slate-200 space-y-3">
-                <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Rental & Yields</span>
-                <div className="space-y-2 text-xs font-mono">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-sans">HDB 4-Room Rent:</span>
-                    <span className="font-bold text-slate-900">${neighborhood.propertySnapshot.hdb.rentalRate}/mo</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-sans">Condo 3BR Rent:</span>
-                    <span className="font-bold text-slate-900">${neighborhood.propertySnapshot.condo.rentalRate}/mo</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500 font-sans">Rental Yield:</span>
-                    <span className="font-bold text-slate-900">~3.3% - 3.8%</span>
-                  </div>
-                  <div className="flex justify-between pt-1 border-t border-slate-100">
-                    <span className="text-slate-500 font-sans">URA Caveat Volume:</span>
-                    <span className="font-bold text-slate-900">{neighborhood.officialData.uraCaveats2024} txns</span>
+                <div className="p-4 rounded bg-white border border-slate-200 space-y-3">
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Rental & Yields</span>
+                  <div className="space-y-2 text-xs font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-sans">HDB 4-Room Rent:</span>
+                      <span className="font-bold text-slate-900">${neighborhood.propertySnapshot.hdb.rentalRate}/mo</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-sans">Condo 3BR Rent:</span>
+                      <span className="font-bold text-slate-900">${neighborhood.propertySnapshot.condo.rentalRate}/mo</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500 font-sans">Rental Yield:</span>
+                      <span className="font-bold text-slate-900">~3.3% - 3.8%</span>
+                    </div>
+                    <div className="flex justify-between pt-1 border-t border-slate-100">
+                      <span className="text-slate-500 font-sans">URA Caveat Volume:</span>
+                      <span className="font-bold text-slate-900">{neighborhood.officialData.uraCaveats2024} txns</span>
+                    </div>
                   </div>
                 </div>
               </div>

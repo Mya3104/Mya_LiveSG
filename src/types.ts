@@ -162,6 +162,73 @@ export interface UserPreferences {
   lifestyleTags: string[]; // e.g. 'hawker', 'malls', 'parks', 'cafes', 'healthcare'
 }
 
+export interface HDBTransaction {
+  _id: number | string;
+  month: string;
+  town: string;
+  flat_type: string;
+  block: string;
+  street_name: string;
+  storey_range: string;
+  floor_area_sqm: number;
+  floor_area_sqft: number;
+  flat_model: string;
+  lease_commence_date: string;
+  remaining_lease: string;
+  remaining_lease_years: number;
+  resale_price: number;
+  psf: number;
+  psm: number;
+}
+
+export interface HDBFlatTypeStats {
+  flatType: string;
+  count: number;
+  medianPrice: number;
+  avgPrice: number;
+  minPrice: number;
+  maxPrice: number;
+  avgPsf: number;
+  avgFloorAreaSqm: number;
+}
+
+export interface HDBPriceDistribution {
+  range: string;
+  count: number;
+  percentage: number;
+}
+
+export interface HDBMonthlyTrend {
+  month: string;
+  avgPrice: number;
+  medianPrice: number;
+  avgPsf: number;
+  volume: number;
+}
+
+export interface HDBTownStatistics {
+  town: string;
+  totalTransactions: number;
+  overallMedianPrice: number;
+  overallAvgPrice: number;
+  overallAvgPsf: number;
+  overallAvgPsm: number;
+  byFlatType: Record<string, HDBFlatTypeStats>;
+  monthlyTrends: HDBMonthlyTrend[];
+  priceDistribution: HDBPriceDistribution[];
+  leaseStats: {
+    minRemainingYears: number;
+    maxRemainingYears: number;
+    avgRemainingYears: number;
+  };
+  dataSource: {
+    name: string;
+    resourceId: string;
+    lastUpdated: string;
+    isLive: boolean;
+  };
+}
+
 export interface WorkplaceHub {
   id: string;
   name: string;
@@ -170,3 +237,83 @@ export interface WorkplaceHub {
   description: string;
   coordinates: { svgX: number; svgY: number };
 }
+
+export interface OneMapSearchResult {
+  SEARCHVAL: string;
+  BLK_NO: string;
+  ROAD_NAME: string;
+  BUILDING: string;
+  ADDRESS: string;
+  POSTAL: string;
+  X: string;
+  Y: string;
+  LATITUDE: string;
+  LONGITUDE: string;
+}
+
+export interface OneMapSearchResponse {
+  found: number;
+  totalNumPages: number;
+  pageNum: number;
+  results: OneMapSearchResult[];
+}
+
+export interface OneMapReverseGeocodeResult {
+  BUILDINGNAME?: string;
+  BLOCK?: string;
+  ROAD?: string;
+  POSTALCODE?: string;
+  X?: string;
+  Y?: string;
+  LATITUDE?: string;
+  LONGITUDE?: string;
+  [key: string]: any;
+}
+
+export interface OneMapRouteResponse {
+  status: number | string;
+  status_message?: string;
+  route_geometry?: string;
+  route_summary?: {
+    total_time?: number;
+    total_distance?: number;
+    start_point?: string;
+    end_point?: string;
+  };
+  route_instructions?: Array<[number, string, number, string, string, string, string, string] | any>;
+  plan?: {
+    date?: string;
+    from?: { name: string; lat: number; lon: number };
+    to?: { name: string; lat: number; lon: number };
+    itineraries?: Array<{
+      duration: number; // in seconds
+      startTime: number;
+      endTime: number;
+      walkTime: number;
+      transitTime: number;
+      waitingTime: number;
+      walkDistance: number;
+      legs: Array<{
+        mode: string;
+        route?: string;
+        agencyName?: string;
+        from: { name: string; lat: number; lon: number };
+        to: { name: string; lat: number; lon: number };
+        startTime: number;
+        endTime: number;
+        duration: number;
+        distance: number;
+        legGeometry?: { points: string };
+      }>;
+    }>;
+  };
+  [key: string]: any;
+}
+
+export interface OneMapTokenStatus {
+  hasCredentials: boolean;
+  tokenActive: boolean;
+  expiresAt: string | null;
+  emailConfigured: string | null;
+}
+

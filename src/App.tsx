@@ -39,9 +39,26 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 
 export function App() {
   const [currentView, setCurrentView] = React.useState<'search' | 'questionnaire' | 'results'>('search');
-  const [preferences, setPreferences] = React.useState<UserPreferences>(DEFAULT_PREFERENCES);
+  const [preferences, setPreferences] = React.useState<UserPreferences>(() => {
+    try {
+      const saved = localStorage.getItem('wheresg_preferences');
+      if (saved) {
+        return { ...DEFAULT_PREFERENCES, ...JSON.parse(saved) };
+      }
+    } catch {}
+    return DEFAULT_PREFERENCES;
+  });
   const [neighborhoods, setNeighborhoods] = React.useState<Neighborhood[]>(() =>
-    rankNeighborhoods(DEFAULT_PREFERENCES, INITIAL_NEIGHBORHOODS)
+    rankNeighborhoods(
+      (() => {
+        try {
+          const saved = localStorage.getItem('wheresg_preferences');
+          if (saved) return { ...DEFAULT_PREFERENCES, ...JSON.parse(saved) };
+        } catch {}
+        return DEFAULT_PREFERENCES;
+      })(),
+      INITIAL_NEIGHBORHOODS
+    )
   );
   const [selectedNeighborhood, setSelectedNeighborhood] = React.useState<Neighborhood>(
     () => neighborhoods[0]
@@ -76,8 +93,15 @@ export function App() {
   const [isOneMapOpen, setIsOneMapOpen] = React.useState<boolean>(false);
   const [isAboutOpen, setIsAboutOpen] = React.useState<boolean>(false);
 
-
   // Sync to local storage
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('wheresg_preferences', JSON.stringify(preferences));
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [preferences]);
+
   React.useEffect(() => {
     try {
       localStorage.setItem('wheresg_saved', JSON.stringify(savedIds));
@@ -178,7 +202,7 @@ export function App() {
       );
     }
     if (sortBy === 'commute_fast') {
-      const hub = preferences.primaryWorkplace || 'mbfc';
+      const hub = preferences.workplaceLocation?.hubId || preferences.primaryWorkplace || 'mbfc';
       return list.sort(
         (a, b) =>
           (a.commutes[hub]?.mrtDurationMins || 50) - (b.commutes[hub]?.mrtDurationMins || 50)
@@ -188,7 +212,7 @@ export function App() {
       return list.sort((a, b) => b.scores.schools - a.scores.schools);
     }
     return list;
-  }, [neighborhoods, sortBy, preferences.primaryWorkplace]);
+  }, [neighborhoods, sortBy, preferences.primaryWorkplace, preferences.workplaceLocation]);
 
   const savedNeighborhoods = INITIAL_NEIGHBORHOODS.filter((n) => savedIds.includes(n.id));
   const compareNeighborhoods = INITIAL_NEIGHBORHOODS.filter((n) => compareIds.includes(n.id));
@@ -230,8 +254,12 @@ export function App() {
           <GuidedQuestionnaire
             initialPreferences={preferences}
             onComplete={(updatedPrefs) => {
+              const locName =
+                updatedPrefs.workplaceLocation?.name ||
+                WORKPLACE_HUBS.find((h) => h.id === updatedPrefs.primaryWorkplace)?.name ||
+                'CBD';
               executeSearch(
-                `${updatedPrefs.familySize} looking for ${updatedPrefs.propertyCategory} under $${updatedPrefs.budgetMax?.toLocaleString()} near ${updatedPrefs.primaryWorkplace}`,
+                `Preferences updated: ${updatedPrefs.familySize.replace('_', ' ')} (${updatedPrefs.propertyCategory}) with workplace at ${locName}`,
                 updatedPrefs
               );
             }}

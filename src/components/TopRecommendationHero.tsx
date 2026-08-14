@@ -40,13 +40,21 @@ export const TopRecommendationHero: React.FC<TopRecommendationHeroProps> = ({
   onViewDetails,
   onAdjustPreferences,
 }) => {
-  const primaryHub = WORKPLACE_HUBS.find((h) => h.id === preferences.primaryWorkplace) || WORKPLACE_HUBS[0];
-  const commute = neighborhood.commutes[primaryHub.id] || neighborhood.commutes['mbfc'];
+  const workplaceLocation = preferences.workplaceLocation;
+  const activeHubId = workplaceLocation?.hubId || preferences.primaryWorkplace || 'mbfc';
+  const primaryHub = WORKPLACE_HUBS.find((h) => h.id === activeHubId) || WORKPLACE_HUBS[0];
+  const commute = neighborhood.commutes[activeHubId] || neighborhood.commutes[primaryHub.id] || neighborhood.commutes['mbfc'];
+  
+  const workplaceLabel = workplaceLocation?.name || primaryHub.shortName || primaryHub.name;
+  const isHighCommutePriority = preferences.selectedPriorities?.includes('workplace') && preferences.selectedPriorities?.includes('commute');
 
   // Extract 3-5 concise, highly relevant reasons based on preferences
   const reasons: string[] = [];
   if (commute) {
-    reasons.push(`${commute.mrtDurationMins} mins door-to-door transit to ${primaryHub.shortName || primaryHub.name}`);
+    reasons.push(`${commute.mrtDurationMins} min estimated commute to ${workplaceLabel}`);
+  }
+  if (isHighCommutePriority) {
+    reasons.push(`Top-tier transit scoring (Workplace + Easy Commute priority combination)`);
   }
   if (neighborhood.mrtStations.length > 0) {
     reasons.push(`${neighborhood.mrtStations[0].name} MRT (${neighborhood.mrtStations[0].walkMins}m walk)`);
@@ -269,7 +277,9 @@ export const TopRecommendationHero: React.FC<TopRecommendationHeroProps> = ({
         {/* Quick Metrics Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3 border-t border-slate-100 text-xs">
           <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
-            <span className="text-[10px] text-slate-400 uppercase font-bold block">Commute to CBD</span>
+            <span className="text-[10px] text-slate-400 uppercase font-bold block truncate">
+              Commute to {workplaceLocation ? workplaceLocation.name : primaryHub.shortName || 'CBD'}
+            </span>
             <span className="font-bold text-slate-900 font-mono text-sm">
               {commute?.mrtDurationMins || 25} mins
             </span>

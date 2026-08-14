@@ -42,7 +42,10 @@ export const ResultsSidebar: React.FC<ResultsSidebarProps> = ({
   onSortChange,
   preferences,
 }) => {
-  const primaryHub = WORKPLACE_HUBS.find((h) => h.id === preferences?.primaryWorkplace) || WORKPLACE_HUBS[0];
+  const workplaceLocation = preferences?.workplaceLocation;
+  const activeHubId = workplaceLocation?.hubId || preferences?.primaryWorkplace || 'mbfc';
+  const primaryHub = WORKPLACE_HUBS.find((h) => h.id === activeHubId) || WORKPLACE_HUBS[0];
+  const workplaceLabel = workplaceLocation?.name || primaryHub.shortName || primaryHub.name;
 
   return (
     <div className="w-full lg:w-[410px] flex-shrink-0 bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-4 max-h-[88vh] lg:sticky lg:top-20 overflow-y-auto">
@@ -78,10 +81,10 @@ export const ResultsSidebar: React.FC<ResultsSidebarProps> = ({
           const isSelected = n.id === selectedId;
           const isSaved = savedIds.includes(n.id);
           const isCompared = compareIds.includes(n.id);
-          const commute = n.commutes[primaryHub.id] || n.commutes['mbfc'];
+          const commute = n.commutes[activeHubId] || n.commutes[primaryHub.id] || n.commutes['mbfc'];
 
           // Top 2 highlights
-          const topHighlight1 = commute ? `${commute.mrtDurationMins}m to ${primaryHub.shortName || primaryHub.name}` : null;
+          const topHighlight1 = commute ? `${commute.mrtDurationMins}m to ${workplaceLabel}` : null;
           const topHighlight2 = n.mrtStations[0] ? `${n.mrtStations[0].name} (${n.mrtStations[0].walkMins}m walk)` : null;
 
           return (
@@ -178,7 +181,9 @@ export const ResultsSidebar: React.FC<ResultsSidebarProps> = ({
               <div className="grid grid-cols-3 gap-2 pt-2.5 text-[10px] text-slate-600 font-mono">
                 <div className="flex items-center gap-1 truncate">
                   <Clock className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                  <span className="font-bold">{commute?.mrtDurationMins || 25}m CBD</span>
+                  <span className="font-bold truncate">
+                    {commute?.mrtDurationMins || 25}m {workplaceLocation ? workplaceLocation.name.split(' ')[0] : primaryHub.shortName || 'CBD'}
+                  </span>
                 </div>
                 <div className="flex items-center gap-1 truncate">
                   <DollarSign className="w-3 h-3 text-slate-400 flex-shrink-0" />

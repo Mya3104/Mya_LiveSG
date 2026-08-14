@@ -2,8 +2,10 @@ import React from 'react';
 import {
   UserPreferences,
   WorkplaceHub,
+  WorkplaceLocation,
 } from '../types';
 import { WORKPLACE_HUBS } from '../data/singaporeData';
+import { WorkplaceInput } from './WorkplaceInput';
 import {
   ArrowLeft,
   ArrowRight,
@@ -30,6 +32,7 @@ import {
   SlidersHorizontal,
   ChevronRight,
   Info,
+  AlertCircle,
 } from 'lucide-react';
 
 interface GuidedQuestionnaireProps {
@@ -39,6 +42,13 @@ interface GuidedQuestionnaireProps {
 }
 
 const PRIORITY_OPTIONS = [
+  {
+    id: 'workplace',
+    label: 'Workplace',
+    desc: 'Tell us where you work',
+    icon: Briefcase,
+    color: 'text-indigo-600 bg-indigo-50 border-indigo-200',
+  },
   {
     id: 'commute',
     label: 'Easy Commute',
@@ -148,7 +158,10 @@ export const GuidedQuestionnaire: React.FC<GuidedQuestionnaireProps> = ({
 
   // Track active priorities selected
   const [selectedPriorities, setSelectedPriorities] = React.useState<string[]>(() => {
-    const p: string[] = ['commute', 'affordability'];
+    if (initialPreferences.selectedPriorities && initialPreferences.selectedPriorities.length > 0) {
+      return initialPreferences.selectedPriorities;
+    }
+    const p: string[] = ['workplace', 'commute', 'affordability'];
     if (form.familySize === 'family_with_kids') p.push('family', 'schools');
     if (form.mrtPriority === 'high' || form.mrtPriority === 'critical') p.push('transport');
     if (form.quietVibePreference === 'very_quiet') p.push('quiet');
@@ -158,9 +171,14 @@ export const GuidedQuestionnaire: React.FC<GuidedQuestionnaireProps> = ({
   });
 
   const togglePriority = (id: string) => {
-    setSelectedPriorities((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
-    );
+    setSelectedPriorities((prev) => {
+      const exists = prev.includes(id);
+      if (exists) {
+        return prev.filter((p) => p !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
   };
 
   const handleNext = () => {
@@ -171,10 +189,12 @@ export const GuidedQuestionnaire: React.FC<GuidedQuestionnaireProps> = ({
       // Build updated preferences
       const updated: UserPreferences = {
         ...form,
+        selectedPriorities,
         mrtPriority: selectedPriorities.includes('transport') ? 'high' : form.mrtPriority,
         primarySchoolDistance: selectedPriorities.includes('schools') ? 'within_1km' : form.primarySchoolDistance,
         quietVibePreference: selectedPriorities.includes('quiet') ? 'very_quiet' : form.quietVibePreference,
         lifestyleTags: selectedPriorities,
+        primaryWorkplace: form.workplaceLocation?.hubId || form.primaryWorkplace,
       };
       onComplete(updated);
     }
@@ -605,6 +625,29 @@ export const GuidedQuestionnaire: React.FC<GuidedQuestionnaireProps> = ({
                   );
                 })}
               </div>
+
+              {/* Interactive Workplace Location section when Workplace priority is selected */}
+              {selectedPriorities.includes('workplace') && (
+                <div className="space-y-3 pt-2">
+                  {!form.workplaceLocation?.name && (
+                    <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2.5 text-xs text-amber-900 font-medium">
+                      <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                      <span>Add your workplace location to personalise your recommendations.</span>
+                    </div>
+                  )}
+
+                  <WorkplaceInput
+                    value={form.workplaceLocation}
+                    onChange={(loc) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        workplaceLocation: loc,
+                        primaryWorkplace: loc?.hubId || prev.primaryWorkplace,
+                      }));
+                    }}
+                  />
+                </div>
+              )}
 
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center gap-2 text-xs text-slate-600">
                 <Info className="w-4 h-4 text-indigo-600 flex-shrink-0" />

@@ -1,7 +1,8 @@
 import React from 'react';
 import { X, SlidersHorizontal, Check, Briefcase, GraduationCap, Train, DollarSign, Home, Users } from 'lucide-react';
-import { UserPreferences } from '../types';
+import { UserPreferences, WorkplaceLocation } from '../types';
 import { WORKPLACE_HUBS } from '../data/singaporeData';
+import { WorkplaceInput } from './WorkplaceInput';
 
 interface PreferencesModalProps {
   isOpen: boolean;
@@ -191,21 +192,20 @@ export const PreferencesModal: React.FC<PreferencesModalProps> = ({
           </div>
 
           {/* Workplaces / Commute Routing */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">
+          <div className="space-y-3">
+            <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">
               Primary Workplace / Commute Destination
             </label>
-            <select
-              value={form.primaryWorkplace}
-              onChange={(e) => setForm({ ...form, primaryWorkplace: e.target.value })}
-              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded text-xs font-medium text-slate-900 focus:border-indigo-600 focus:outline-none"
-            >
-              {WORKPLACE_HUBS.map((hub) => (
-                <option key={hub.id} value={hub.id}>
-                  {hub.name}
-                </option>
-              ))}
-            </select>
+            <WorkplaceInput
+              value={form.workplaceLocation}
+              onChange={(loc) => {
+                setForm({
+                  ...form,
+                  workplaceLocation: loc,
+                  primaryWorkplace: loc?.hubId || form.primaryWorkplace,
+                });
+              }}
+            />
           </div>
 
           <div>

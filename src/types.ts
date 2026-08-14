@@ -143,6 +143,18 @@ export interface Neighborhood {
   };
 }
 
+export interface WorkplaceLocation {
+  id?: string;
+  name: string; // e.g. "Marina Bay Financial Centre" or "Raffles Place"
+  subtitle?: string; // e.g. "Marina Bay · Downtown Core" or "Raffles Place MRT · Downtown Core"
+  address?: string;
+  mrtStation?: string;
+  area?: string;
+  lat?: number;
+  lng?: number;
+  hubId?: string; // e.g. 'mbfc', 'raffles_place', 'one_north', 'changi_biz', 'jurong_lake', 'woodlands_regional', 'tampines'
+}
+
 export interface UserPreferences {
   query: string;
   familySize: 'single' | 'couple' | 'family_with_kids' | 'multi_gen';
@@ -153,6 +165,8 @@ export interface UserPreferences {
   bedroomsMin: number;
   budgetMax: number; // in SGD
   primaryWorkplace: string; // Hub id e.g. 'mbfc'
+  workplaceLocation?: WorkplaceLocation | null;
+  selectedPriorities?: string[]; // array of selected priority IDs: 'workplace', 'commute', 'affordability', 'quiet', 'food', 'family', 'schools', 'shopping', 'transport', 'nightlife', 'central', 'healthcare'
   secondaryWorkplace?: string; // Hub id e.g. 'changi'
   maxCommuteMins: number;
   mrtPriority: 'critical' | 'high' | 'moderate' | 'any';

@@ -1,5 +1,6 @@
 import { Neighborhood, UserPreferences } from '../types';
 import { INITIAL_NEIGHBORHOODS } from '../data/singaporeData';
+import { resolveWorkplaceToHubId, searchPredefinedWorkplaces } from '../data/singaporeWorkplaces';
 
 export function parseNaturalLanguageQuery(query: string): Partial<UserPreferences> {
   const q = query.toLowerCase();
@@ -48,18 +49,12 @@ export function parseNaturalLanguageQuery(query: string): Partial<UserPreference
   }
 
   // Detect Workplaces
-  if (q.includes('mbfc') || q.includes('marina bay') || q.includes('downtown') || q.includes('shenton')) {
-    result.primaryWorkplace = 'mbfc';
-  } else if (q.includes('changi') || q.includes('expo') || q.includes('aerospace')) {
-    result.primaryWorkplace = 'changi_biz';
-  } else if (q.includes('one-north') || q.includes('fusionopolis') || q.includes('biopolis') || q.includes('buona vista')) {
-    result.primaryWorkplace = 'one_north';
-  } else if (q.includes('jurong') || q.includes('tuas') || q.includes('cleantech')) {
-    result.primaryWorkplace = 'jurong_lake';
-  } else if (q.includes('woodlands') || q.includes('causeway')) {
-    result.primaryWorkplace = 'woodlands_regional';
-  } else if (q.includes('cbd') || q.includes('raffles') || q.includes('tanjong pagar')) {
-    result.primaryWorkplace = 'raffles_place';
+  const detectedHub = resolveWorkplaceToHubId(q);
+  result.primaryWorkplace = detectedHub;
+
+  const matches = searchPredefinedWorkplaces(q);
+  if (matches.length > 0) {
+    result.workplaceLocation = matches[0];
   }
 
   // Detect Secondary Workplace if mentioned (e.g. "I work at MBFC, my wife works at Changi")
@@ -100,6 +95,22 @@ export function rankNeighborhoods(
   customList: Neighborhood[] = INITIAL_NEIGHBORHOODS,
   hdbStatsMap?: Record<string, { median3Room?: number; median4Room?: number; median5Room?: number; avgPsf?: number }>
 ): Neighborhood[] {
+  // Determine if Workplace priority is explicitly active
+  const selectedPriorities = preferences.selectedPriorities || [];
+  const isWorkplacePriorityActive = selectedPriorities.includes('workplace') && Boolean(preferences.workplaceLocation?.name || preferences.primaryWorkplace);
+  const isEasyCommutePriorityActive = selectedPriorities.includes('commute');
+  const hasSelectedPriorities = selectedPriorities.length > 0;
+
+  // Resolve target workplace hub
+  let activeHubId = 'mbfc';
+  if (preferences.workplaceLocation?.hubId) {
+    activeHubId = preferences.workplaceLocation.hubId;
+  } else if (preferences.workplaceLocation?.name) {
+    activeHubId = resolveWorkplaceToHubId(preferences.workplaceLocation.name);
+  } else if (preferences.primaryWorkplace) {
+    activeHubId = preferences.primaryWorkplace;
+  }
+
   return customList
     .map((n) => {
       let totalScore = 0;
@@ -115,25 +126,65 @@ export function rankNeighborhoods(
         avgPsf: hdbLive?.avgPsf || n.propertySnapshot.hdb.avgPsf,
       };
 
-      // 1. Commute Factor (Weight: 25)
-      const primaryHub = preferences.primaryWorkplace || 'mbfc';
-      const primaryCommute = n.commutes[primaryHub] || n.commutes['mbfc'];
-      let commuteScore = 100 - Math.max(0, (primaryCommute.mrtDurationMins - 15) * 2.2);
+      // 1. Commute Factor Calculation
+      const primaryCommute = n.commutes[activeHubId] || n.commutes['mbfc'] || {
+        mrtDurationMins: 32,
+        driveDurationMins: 20,
+        transfers: 1,
+        mrtLines: ['MRT'],
+        routeSummary: 'Direct or 1-transfer route',
+      };
 
+      // Base commute scoring: fast door-to-door transit is rewarded
+      let commuteScore = 100 - Math.max(0, (primaryCommute.mrtDurationMins - 12) * 2.2);
+
+      // Direct MRT line / zero transfers bonus
+      if (primaryCommute.transfers === 0) {
+        commuteScore += 6;
+      } else if (primaryCommute.transfers >= 2) {
+        commuteScore -= 6;
+      }
+
+      // Walk to MRT bonus
+      const walkToMrtMins = n.mrtStations[0]?.walkMins || 8;
+      if (walkToMrtMins <= 4) {
+        commuteScore += 4;
+      } else if (walkToMrtMins > 10) {
+        commuteScore -= 4;
+      }
+
+      // Secondary workplace if provided
       if (preferences.secondaryWorkplace && n.commutes[preferences.secondaryWorkplace]) {
         const secCommute = n.commutes[preferences.secondaryWorkplace];
-        const secScore = 100 - Math.max(0, (secCommute.mrtDurationMins - 15) * 2.2);
-        commuteScore = (commuteScore * 0.55 + secScore * 0.45);
+        const secScore = 100 - Math.max(0, (secCommute.mrtDurationMins - 12) * 2.2) + (secCommute.transfers === 0 ? 5 : 0);
+        commuteScore = commuteScore * 0.55 + secScore * 0.45;
       }
 
+      // Commute tolerance cap
       if (primaryCommute.mrtDurationMins > preferences.maxCommuteMins) {
-        commuteScore -= (primaryCommute.mrtDurationMins - preferences.maxCommuteMins) * 1.5;
+        commuteScore -= (primaryCommute.mrtDurationMins - preferences.maxCommuteMins) * 1.8;
       }
       commuteScore = Math.max(20, Math.min(100, Math.round(commuteScore)));
-      totalScore += commuteScore * 25;
-      weightSum += 25;
 
-      // 2. Affordability Factor (Weight: 25)
+      // Weight calculation for Commute based on user priority selections:
+      let commuteWeight = 25;
+      if (hasSelectedPriorities) {
+        if (isWorkplacePriorityActive && isEasyCommutePriorityActive) {
+          // If user selects BOTH Workplace + Easy Commute: make commute a particularly important ranking factor
+          commuteWeight = 42;
+        } else if (isWorkplacePriorityActive || isEasyCommutePriorityActive) {
+          // One of them is selected
+          commuteWeight = 28;
+        } else {
+          // Neither Workplace nor Easy Commute is selected: reduce its influence significantly
+          commuteWeight = 8;
+        }
+      }
+
+      totalScore += commuteScore * commuteWeight;
+      weightSum += commuteWeight;
+
+      // 2. Affordability Factor
       let pricePoint = 1500000;
       if (preferences.propertyCategory === 'hdb') {
         if (preferences.bedroomsMin <= 2) {
@@ -160,40 +211,81 @@ export function rankNeighborhoods(
         }
       }
       affordScore = Math.max(20, Math.min(100, Math.round(affordScore)));
-      totalScore += affordScore * 25;
-      weightSum += 25;
 
-      // 3. School Factor (Weight: 20)
+      let affordWeight = 25;
+      if (hasSelectedPriorities) {
+        affordWeight = selectedPriorities.includes('affordability') ? 32 : 12;
+      }
+      totalScore += affordScore * affordWeight;
+      weightSum += affordWeight;
+
+      // 3. School Factor
       let schoolScore = n.scores.schools;
       const schoolsWithin1Km = n.schools.filter((s) => s.zone === '<1km');
       if (preferences.primarySchoolDistance === 'within_1km') {
-        if (schoolsWithin1Km.length >= 3) schoolScore += 5;
-        if (schoolsWithin1Km.length === 0) schoolScore -= 20;
+        if (schoolsWithin1Km.length >= 3) schoolScore += 6;
+        if (schoolsWithin1Km.length === 0) schoolScore -= 18;
       }
       if (preferences.schoolTierPreference === 'top_tier') {
         const hasTopTier = schoolsWithin1Km.some((s) => s.tier === 'Top Tier');
-        if (hasTopTier) schoolScore += 5;
+        if (hasTopTier) schoolScore += 6;
       }
-      schoolScore = Math.max(30, Math.min(100, Math.round(schoolScore)));
-      totalScore += schoolScore * (preferences.familySize === 'family_with_kids' ? 22 : 12);
-      weightSum += (preferences.familySize === 'family_with_kids' ? 22 : 12);
+      schoolScore = Math.max(25, Math.min(100, Math.round(schoolScore)));
 
-      // 4. Transport & MRT Factor (Weight: 15)
+      let schoolWeight = preferences.familySize === 'family_with_kids' ? 22 : 12;
+      if (hasSelectedPriorities) {
+        schoolWeight = selectedPriorities.includes('schools') ? 30 : selectedPriorities.includes('family') ? 22 : 8;
+      }
+      totalScore += schoolScore * schoolWeight;
+      weightSum += schoolWeight;
+
+      // 4. Transport & MRT Factor
       let transportScore = n.scores.transport;
       if (preferences.mrtPriority === 'critical') {
-        const walkDist = n.mrtStations[0]?.walkMins || 10;
-        transportScore = walkDist <= 4 ? 98 : walkDist <= 7 ? 90 : 75;
+        transportScore = walkToMrtMins <= 4 ? 98 : walkToMrtMins <= 7 ? 90 : 75;
       }
-      totalScore += transportScore * 15;
-      weightSum += 15;
+      if (selectedPriorities.includes('central') && n.region === 'Central') {
+        transportScore += 5;
+      }
+      transportScore = Math.max(30, Math.min(100, Math.round(transportScore)));
 
-      // 5. Amenities & Lifestyle (Weight: 15)
-      let lifestyleScore = (n.scores.familyAmenities + n.scores.lifestyle) / 2;
-      if (preferences.quietVibePreference === 'very_quiet') {
-        if (n.officialData.greeneryParkCoverage > 40) lifestyleScore += 5;
+      let transportWeight = 15;
+      if (hasSelectedPriorities) {
+        transportWeight = selectedPriorities.includes('transport') || selectedPriorities.includes('central') ? 24 : 10;
       }
-      totalScore += lifestyleScore * 15;
-      weightSum += 15;
+      totalScore += transportScore * transportWeight;
+      weightSum += transportWeight;
+
+      // 5. Amenities, Greenery, Food & Lifestyle
+      let lifestyleScore = (n.scores.familyAmenities + n.scores.lifestyle) / 2;
+      if (selectedPriorities.includes('quiet') || preferences.quietVibePreference === 'very_quiet') {
+        if (n.officialData.greeneryParkCoverage > 35) lifestyleScore += 6;
+      }
+      const hawkerCount = n.amenities.filter((a) => a.type === 'hawker').length;
+      const mallCount = n.amenities.filter((a) => a.type === 'mall' || a.type === 'supermarket').length;
+      const healthCount = n.amenities.filter((a) => a.type === 'clinic').length;
+
+      if (selectedPriorities.includes('food')) {
+        lifestyleScore += (hawkerCount >= 2 ? 6 : 2);
+      }
+      if (selectedPriorities.includes('shopping')) {
+        lifestyleScore += (mallCount >= 2 ? 6 : 2);
+      }
+      if (selectedPriorities.includes('healthcare')) {
+        lifestyleScore += (healthCount >= 1 ? 5 : 0);
+      }
+      if (selectedPriorities.includes('nightlife') && (n.scores.lifestyle >= 85)) {
+        lifestyleScore += 6;
+      }
+      lifestyleScore = Math.max(30, Math.min(100, Math.round(lifestyleScore)));
+
+      let lifestyleWeight = 15;
+      if (hasSelectedPriorities) {
+        const lifestyleCount = ['quiet', 'food', 'shopping', 'nightlife', 'healthcare', 'family'].filter((p) => selectedPriorities.includes(p)).length;
+        lifestyleWeight = lifestyleCount >= 2 ? 26 : 14;
+      }
+      totalScore += lifestyleScore * lifestyleWeight;
+      weightSum += lifestyleWeight;
 
       const finalMatchScore = Math.round(totalScore / weightSum);
       let matchTier: Neighborhood['matchTier'] = 'Good match';

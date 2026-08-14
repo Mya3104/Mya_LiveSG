@@ -93,11 +93,24 @@ export const WorkplaceInput: React.FC<WorkplaceInputProps> = ({
     setQuery('');
   };
 
-  const handleCustomManualSubmit = (e: React.FormEvent) => {
+  const handleCustomManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
 
     const trimmed = query.trim();
+
+    // If top suggestion closely matches query, select it with full lat/lng
+    if (suggestions.length > 0) {
+      const top = suggestions[0];
+      if (
+        top.name.toLowerCase() === trimmed.toLowerCase() ||
+        (top.address && top.address.toLowerCase() === trimmed.toLowerCase())
+      ) {
+        handleSelect(top);
+        return;
+      }
+    }
+
     const resolvedHub = resolveWorkplaceToHubId(trimmed);
     const customLoc: WorkplaceLocation = {
       name: trimmed,
@@ -105,6 +118,25 @@ export const WorkplaceInput: React.FC<WorkplaceInputProps> = ({
       address: trimmed,
       hubId: resolvedHub,
     };
+
+    // Quick background lookup for exact coordinates
+    try {
+      const res = await fetch(`/api/onemap/search?searchVal=${encodeURIComponent(trimmed)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          const first = data.results[0];
+          const lat = parseFloat(first.LATITUDE);
+          const lng = parseFloat(first.LONGITUDE);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            customLoc.lat = lat;
+            customLoc.lng = lng;
+            customLoc.address = first.ADDRESS || customLoc.address;
+          }
+        }
+      }
+    } catch {}
+
     handleSelect(customLoc);
   };
 

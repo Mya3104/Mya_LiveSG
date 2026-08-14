@@ -1,6 +1,7 @@
 import { Neighborhood, UserPreferences } from '../types';
 import { INITIAL_NEIGHBORHOODS } from '../data/singaporeData';
 import { resolveWorkplaceToHubId, searchPredefinedWorkplaces } from '../data/singaporeWorkplaces';
+import { estimateNeighbourhoodCommute, calculateCommuteScore } from '../services/commuteRouter';
 
 export function parseNaturalLanguageQuery(query: string): Partial<UserPreferences> {
   const q = query.toLowerCase();
@@ -126,45 +127,30 @@ export function rankNeighborhoods(
         avgPsf: hdbLive?.avgPsf || n.propertySnapshot.hdb.avgPsf,
       };
 
-      // 1. Commute Factor Calculation
-      const primaryCommute = n.commutes[activeHubId] || n.commutes['mbfc'] || {
-        mrtDurationMins: 32,
-        driveDurationMins: 20,
-        transfers: 1,
-        mrtLines: ['MRT'],
-        routeSummary: 'Direct or 1-transfer route',
-      };
+      // 1. Commute Factor Calculation using decoupled commuteRouter
+      const primaryCommute = estimateNeighbourhoodCommute(
+        n,
+        preferences.workplaceLocation,
+        activeHubId
+      );
 
-      // Base commute scoring: fast door-to-door transit is rewarded
-      let commuteScore = 100 - Math.max(0, (primaryCommute.mrtDurationMins - 12) * 2.2);
-
-      // Direct MRT line / zero transfers bonus
-      if (primaryCommute.transfers === 0) {
-        commuteScore += 6;
-      } else if (primaryCommute.transfers >= 2) {
-        commuteScore -= 6;
-      }
-
-      // Walk to MRT bonus
       const walkToMrtMins = n.mrtStations[0]?.walkMins || 8;
-      if (walkToMrtMins <= 4) {
-        commuteScore += 4;
-      } else if (walkToMrtMins > 10) {
-        commuteScore -= 4;
-      }
+      let commuteScore = calculateCommuteScore(
+        primaryCommute,
+        preferences.maxCommuteMins || 45,
+        walkToMrtMins
+      );
 
       // Secondary workplace if provided
       if (preferences.secondaryWorkplace && n.commutes[preferences.secondaryWorkplace]) {
         const secCommute = n.commutes[preferences.secondaryWorkplace];
-        const secScore = 100 - Math.max(0, (secCommute.mrtDurationMins - 12) * 2.2) + (secCommute.transfers === 0 ? 5 : 0);
-        commuteScore = commuteScore * 0.55 + secScore * 0.45;
+        const secScore = calculateCommuteScore(
+          secCommute,
+          preferences.maxCommuteMins || 45,
+          walkToMrtMins
+        );
+        commuteScore = Math.round(commuteScore * 0.55 + secScore * 0.45);
       }
-
-      // Commute tolerance cap
-      if (primaryCommute.mrtDurationMins > preferences.maxCommuteMins) {
-        commuteScore -= (primaryCommute.mrtDurationMins - preferences.maxCommuteMins) * 1.8;
-      }
-      commuteScore = Math.max(20, Math.min(100, Math.round(commuteScore)));
 
       // Weight calculation for Commute based on user priority selections:
       let commuteWeight = 25;
